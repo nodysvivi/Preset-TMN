@@ -1,7 +1,7 @@
 (function () {
   const SCRIPT_ID = typeof getScriptId === "function" ? getScriptId() : "silver_moon_styler";
   const STYLE_ID = `reasoning-style-${SCRIPT_ID}`;
-  const DEBUG = false; // Tắt nhật ký gỡ lỗi
+  const DEBUG = false;
 
   function log(...args) {
     if (DEBUG) console.log("[SilverMoon]", ...args);
@@ -19,7 +19,6 @@
     return typeof SillyTavern !== "undefined" ? SillyTavern : null;
   }
 
-  // Chủ động tạo và ghi đè cấu hình reasoning, đảm bảo kiểu dáng của kịch bản này có hiệu lực
   function injectConfig() {
     const context = getST()?.getContext?.();
     if (!context) return;
@@ -31,16 +30,17 @@
     config.suffix = "</thinking>";
   }
 
-  // ===================== CSS (Phiên bản tối ưu hóa hiệu suất) =====================
+  // ===================== CSS =====================
   const REASONING_CSS = String.raw`
 /* ========================================================= */
-/*  Chủ đề: Ngân Nguyệt · Vớt nước trăng trên tay (Bản tối ưu) */
+/*  Chủ đề: Ngân Nguyệt · Vớt nước trăng trên tay (Fix lỗi tràn viền) */
 /* ========================================================= */
 
 #chat .mes_reasoning_details[data-state="thinking"],
 #chat .mes_reasoning_details[data-state="done"] {
     margin: 16px 0 !important;
     width: 100% !important;
+    max-width: 100% !important; /* Đảm bảo khối UI không vượt quá khung chat */
     position: relative !important;
     isolation: isolate !important;
     background: linear-gradient(172deg, #0b1525 0%, #0d1b30 45%, #0b1525 100%) !important;
@@ -80,7 +80,7 @@
         radial-gradient(1px 1px at 94% 38%,  rgba(255,255,255,0.3), transparent);
 }
 
-/* Dải sáng tiến độ (Chỉ ở trạng thái đang suy nghĩ, transform thuần túy) */
+/* Dải sáng tiến độ */
 #chat .mes_reasoning_details[data-state="thinking"]::after {
     content: '';
     position: absolute;
@@ -106,28 +106,25 @@
 #chat .mes_reasoning_details[data-state] .mes_reasoning_header {
     margin: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
-    text-align: left !important;
 }
 #chat .mes_reasoning_details[data-state] .mes_reasoning_summary {
     position: relative;
     z-index: 10;
     padding: 20px !important;
     min-height: 64px;
-    color: rgba(180,195,220,0.65) !important;
-    font-weight: 500 !important;
     cursor: pointer !important;
     list-style: none !important;
     display: flex !important;
     align-items: center !important;
     transition: background 0.3s ease !important;
     user-select: none !important;
-    max-width: 100% !important;
-    overflow-x: hidden !important;
+    overflow: hidden !important; /* Chặn tràn ngang tuyệt đối */
 }
 #chat .mes_reasoning_details[data-state] .mes_reasoning_summary:hover {
     background: rgba(180,195,215,0.03) !important;
@@ -143,84 +140,86 @@
     display: flex !important;
     align-items: center !important;
     gap: 12px !important;
-    width: 100% !important;
-    max-width: 100% !important;
     min-width: 0 !important;
     cursor: pointer !important;
     position: relative;
     z-index: 10;
 }
 
-/* Che chắn các biểu tượng mặc định (icon gốc) */
+/* Ẩn các icon/text gốc của ST để tránh xung đột layout */
 #chat .mes_reasoning_details[data-state] .thinking-icon,
 #chat .mes_reasoning_details[data-state] .icon-svg,
 #chat .mes_reasoning_details[data-state] .mes_reasoning_arrow,
 #chat .mes_reasoning_details[data-state] .mes_reasoning_header_text {
     display: none !important;
-    font-size: 0 !important;
-    opacity: 0 !important;
 }
 
-/* Chữ tiêu đề */
+/* Chữ tiêu đề - FIX LỖI TRÀN: Ép ngắt dòng và giới hạn chiều rộng */
 #chat .mes_reasoning_details[data-state] .mes_reasoning_header_title {
     padding-left: 66px !important;
+    padding-right: 12px !important; /* Thêm khoảng trống bên phải để text không dính mép */
     font-family: 'Noto Serif SC', serif !important;
-    font-size: 0 !important; /* Ẩn text gốc "Thought for X seconds" của ST, tránh cộng dồn tràn dòng cùng chữ trang trí */
-    font-weight: 500 !important;
-    letter-spacing: 0.02em !important;
-    color: rgba(180,195,220,0.65) !important;
-    transition: color 0.8s ease !important;
-    flex: 1 !important;
-    min-width: 0 !important; /* Fix flexbox overflow: cho phép item co lại thay vì bị đẩy tràn ra ngoài */
+    font-size: 0 !important;
+    color: transparent !important;
+    flex: 1 1 auto !important; /* Cho phép co giãn tự do nhưng không vỡ */
+    min-width: 0 !important; 
     max-width: 100% !important;
+    box-sizing: border-box !important;
     cursor: pointer !important;
     display: flex !important;
-    align-items: flex-start !important;
-    justify-content: flex-start !important;
-    text-align: left !important;
-    gap: 12px !important;
-    flex-wrap: wrap !important;
-    overflow: hidden !important;
+    flex-direction: column !important; /* Xếp dọc Tiêu đề và Thơ */
+    align-items: flex-start !important; 
+    justify-content: center !important;
+    gap: 6px !important;
 }
 
-/* Tiêu đề trạng thái đang suy nghĩ (Có hiệu ứng nhịp thở, chỉ opacity + transform) */
+/* Ẩn text gốc rác của ST nếu có */
+#chat .mes_reasoning_details[data-state] .mes_reasoning_header_title * {
+    display: none !important;
+}
+
+/* Tiêu đề chung (Ép tự động xuống dòng) */
+#chat .mes_reasoning_details[data-state] .mes_reasoning_header_title::before,
+#chat .mes_reasoning_details[data-state] .mes_reasoning_header_title::after {
+    display: block !important;
+    max-width: 100% !important;
+    white-space: normal !important; /* Cho phép xuống dòng */
+    word-wrap: break-word !important; /* Cắt chữ nếu quá dài */
+    overflow-wrap: break-word !important;
+}
+
+/* Trạng thái đang suy nghĩ */
 #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header_title::before {
     content: '\2726 Vớt nước trăng trên tay, vờn hoa hương vương áo';
-    display: inline-block !important;
-    text-align: left !important;
     font-size: 1rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.02em !important;
     color: rgba(180,195,215,0.70);
     text-shadow: 0 0 18px rgba(180,195,215,0.20);
     animation: sm-title-pulse 3.2s ease-in-out infinite;
 }
 @keyframes sm-title-pulse {
-    0%, 100% { opacity: 0.5; transform: scale(0.92); }
-    50%      { opacity: 0.95; transform: scale(1.06); }
+    0%, 100% { opacity: 0.5; transform: scale(0.98); transform-origin: left; }
+    50%      { opacity: 0.95; transform: scale(1.02); transform-origin: left; }
 }
 
-/* Tiêu đề trạng thái đã hoàn thành (Tĩnh, không có hiệu ứng) */
+/* Trạng thái đã hoàn thành */
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header_title::before {
     content: '\2726 Ngân nguyệt chiếu tuyết đọng';
-    display: inline-block !important;
-    text-align: left !important;
     font-size: 1rem !important;
+    font-weight: 500 !important;
+    letter-spacing: 0.02em !important;
     color: #bcc8d8;
     text-shadow: 0 0 28px rgba(180,195,215,0.50), 0 0 56px rgba(180,195,215,0.20);
-    /* Không có hiệu ứng */
 }
-/* Phụ đề (Hiện rõ dần một lần) */
+
+/* Phụ đề bài thơ */
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header_title::after {
     content: '\2014\2014 Ngân nguyệt chiếu tuyết đọng, lưu quang dạo loanh quanh \2014\2014';
-    display: block !important;
-    width: 100% !important;
-    text-align: left !important;
-    text-indent: 0 !important;
-    font-size: 0.68rem;
+    font-size: 0.68rem !important;
     font-family: 'Noto Serif SC', 'STKaiti', 'KaiTi', serif;
     color: rgba(180,195,215,0.50);
     letter-spacing: 0.16em;
-    white-space: normal !important;
-    overflow-wrap: break-word !important;
     opacity: 0;
     animation: sm-poem-fade-in 2s 0.6s forwards;
 }
@@ -250,14 +249,12 @@
 #chat .mes_reasoning_details[data-state] .mes_reasoning::-webkit-scrollbar-thumb {
     background: rgba(180,195,215,0.12);
     border-radius: 2px;
-    transition: background 0.22s ease;
 }
 #chat .mes_reasoning_details[data-state] .mes_reasoning::-webkit-scrollbar-thumb:hover {
     background: rgba(180,195,215,0.20);
 }
 
-/* ========== Hệ thống Mặt Trăng (Tối ưu hóa hiệu suất) ========== */
-/* Định vị dùng chung */
+/* ========== Hệ thống Mặt Trăng ========== */
 #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header::before,
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header::before {
     content: '';
@@ -272,7 +269,6 @@
     transform: translateY(-50%);
 }
 
-/* Trạng thái đang suy nghĩ: Trăng khuyết + Nhịp thở (Chỉ opacity + scale) */
 #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header::before {
     background: #0b1525;
     box-shadow:
@@ -291,18 +287,12 @@
     50%      { opacity: 0.95; transform: translateY(-50%) scale(1.08); }
 }
 
-/* Trạng thái hoàn thành: Trăng tròn (Tĩnh, không có hiệu ứng) */
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header::before {
-    background: radial-gradient(circle at 36% 34%,
-        #f4f7fa 0%, #c0cce0 32%, #9aaec4 65%, #708098 92%, #4e5d70 100%);
-    box-shadow:
-        0 0 20px rgba(180,195,215,0.50),
-        0 0 44px rgba(180,195,215,0.35),
-        0 0 72px rgba(175,195,220,0.1);
-    /* Không có hiệu ứng, duy trì trạng thái tĩnh */
+    background: radial-gradient(circle at 36% 34%, #f4f7fa 0%, #c0cce0 32%, #9aaec4 65%, #708098 92%, #4e5d70 100%);
+    box-shadow: 0 0 20px rgba(180,195,215,0.50), 0 0 44px rgba(180,195,215,0.35), 0 0 72px rgba(175,195,220,0.1);
 }
 
-/* Tầng phát sáng (Chỉ ở trạng thái đang suy nghĩ mới có nhịp thở nhẹ, trạng thái hoàn thành thì tĩnh) */
+/* Tầng phát sáng của mặt trăng */
 #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header::after,
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header::after {
     content: '';
@@ -327,15 +317,30 @@
 }
 #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header::after {
     background: radial-gradient(circle at 36% 34%, rgba(205,220,240,0.15) 0%, transparent 60%);
-    /* Tĩnh, không có hiệu ứng */
 }
 
-/* Thích ứng với thiết bị (Responsive) */
+/* ========================================================================= */
+/* Thích ứng với thiết bị (Responsive Mobile) */
+/* ========================================================================= */
 @media (max-width: 600px) {
     #chat .mes_reasoning_details[data-state] .mes_reasoning_summary {
         padding: 14px 12px !important;
         min-height: 50px;
     }
+    
+    #chat .mes_reasoning_details[data-state] .mes_reasoning_header_title {
+        padding-left: 48px !important;
+        padding-right: 8px !important;
+    }
+    
+    #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header_title::before,
+    #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header_title::before {
+        font-size: 0.88rem !important;
+    }
+    #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header_title::after {
+        font-size: 0.6rem !important; 
+    }
+
     #chat .mes_reasoning_details[data-state="thinking"] .mes_reasoning_header::before,
     #chat .mes_reasoning_details[data-state="done"] .mes_reasoning_header::before {
         width: 32px;
@@ -349,11 +354,6 @@
         left: 4px;
         transform: translate(-14px, -50%);
     }
-    #chat .mes_reasoning_details[data-state] .mes_reasoning_header_title {
-        padding-left: 50px !important;
-        font-size: 0.88rem !important;
-        letter-spacing: 0.02em !important;
-    }
     #chat .mes_reasoning_details[data-state] .mes_reasoning {
         padding: 12px 16px !important;
     }
@@ -363,7 +363,7 @@
     }
 }
 
-/* Giảm cấp cho người dùng nhạy cảm với chuyển động (Motion sensitivity) */
+/* Giảm cấp cho người dùng nhạy cảm với chuyển động */
 @media (prefers-reduced-motion: reduce) {
     #chat .mes_reasoning_details[data-state] * {
         animation-duration: 0.01ms !important;
@@ -388,7 +388,6 @@
   function injectStyle() {
     const topDoc = getTopDocument();
     injectStyleOnce(topDoc);
-    // Tránh tiêm lặp lại vào tài liệu chính (nếu topDoc === document thì chỉ tiêm một lần)
     if (topDoc !== document) injectStyleOnce(document);
   }
 
@@ -404,10 +403,9 @@
     injectConfig();
     injectStyle();
     window.addEventListener("pagehide", removeStyle);
-    log("SilverMoon styler initialized (lightweight).");
+    log("SilverMoon styler initialized (Overflow fixed).");
   }
 
-  // Khởi động (Sử dụng jQuery để đảm bảo có thể thực thi chính xác ngay cả khi tải động)
   $(() => {
     errorCatched(init)();
   });
